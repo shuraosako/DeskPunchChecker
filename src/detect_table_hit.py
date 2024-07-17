@@ -31,7 +31,7 @@ WARMUP_TIME = 5  # ウォームアップ時間（秒）を追加
 # 画像のパスを設定
 IMAGE_DIR = os.path.join(PROJECT_ROOT, 'images')
 REGULAR_IMAGES = ['image 1.png', 'image 2.png', 'image 3.png', 'image 4.png']
-RARE_IMAGE = ['image 5.png' , 'image 6.png']
+RARE_IMAGES = ['image 5.png', 'image 6.png']
 
 # モデルとスケーラーの読み込み
 MODEL_PATH = os.path.join(PROJECT_ROOT, 'models', 'svm_model.joblib')
@@ -47,7 +47,7 @@ except Exception as e:
 
 def select_image():
     if random.random() < 0.05:  # 5%の確率で希少な画像を選択
-        return os.path.join(IMAGE_DIR, RARE_IMAGE)
+        return os.path.join(IMAGE_DIR, random.choice(RARE_IMAGES))
     else:
         return os.path.join(IMAGE_DIR, random.choice(REGULAR_IMAGES))
 
