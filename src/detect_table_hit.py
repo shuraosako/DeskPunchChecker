@@ -10,6 +10,7 @@ import os
 import logging
 import threading
 import queue
+import random
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,9 +26,12 @@ RATE = 44100
 DURATION = 3  # 3秒のサンプルを使用
 CONFIDENCE_THRESHOLD = 0.3  # 検出の信頼度閾値
 DISPLAY_TIME = 3  # 画像表示時間（秒）
+WARMUP_TIME = 5  # ウォームアップ時間（秒）を追加
 
 # 画像のパスを設定
-IMAGE_PATH = os.path.join(PROJECT_ROOT, 'images', 'image1.png')
+IMAGE_DIR = os.path.join(PROJECT_ROOT, 'images')
+REGULAR_IMAGES = ['image 1.png', 'image 2.png', 'image 3.png', 'image 4.png']
+RARE_IMAGE = ['image 5.png' , 'image 6.png']
 
 # モデルとスケーラーの読み込み
 MODEL_PATH = os.path.join(PROJECT_ROOT, 'models', 'svm_model.joblib')
@@ -41,13 +45,11 @@ except Exception as e:
     logging.error(f"モデルまたはスケーラーの読み込みに失敗しました: {e}")
     raise
 
-# 画像を読み込む
-try:
-    img = Image.open(IMAGE_PATH)
-    logging.info("画像を正常に読み込みました。")
-except Exception as e:
-    logging.error(f"画像の読み込みに失敗しました: {e}")
-    raise
+def select_image():
+    if random.random() < 0.05:  # 5%の確率で希少な画像を選択
+        return os.path.join(IMAGE_DIR, RARE_IMAGE)
+    else:
+        return os.path.join(IMAGE_DIR, random.choice(REGULAR_IMAGES))
 
 def extract_features(audio_data, sr):
     try:
@@ -96,11 +98,14 @@ def detect_table_hit(audio_buffer):
         return False
 
 def display_image():
+    image_path = select_image()
+    img = Image.open(image_path)
     plt.imshow(img)
     plt.axis('off')
     plt.show(block=False)
     plt.pause(DISPLAY_TIME)
     plt.close()
+    logging.info(f"表示した画像: {os.path.basename(image_path)}")
 
 def audio_callback(in_data, frame_count, time_info, status):
     audio_queue.put(in_data)
@@ -129,8 +134,24 @@ audio_buffer = np.zeros(BUFFER_SIZE, dtype=np.int16)
 
 logging.info("台パン検知を開始します。Ctrl+Cで停止します。")
 
+# ウォームアップ期間の追加
+logging.info(f"ウォームアップ中... {WARMUP_TIME}秒お待ちください。")
+start_time = time.time()
+
 try:
     while True:
+        current_time = time.time()
+        
+        # ウォームアップ期間中はデータを収集するだけで検出は行わない
+        if current_time - start_time < WARMUP_TIME:
+            while not audio_queue.empty():
+                data = audio_queue.get()
+                new_data = np.frombuffer(data, dtype=np.int16)
+                audio_buffer = np.roll(audio_buffer, -len(new_data))
+                audio_buffer[-len(new_data):] = new_data
+            time.sleep(0.1)
+            continue
+
         # キューからデータを取得
         while not audio_queue.empty():
             data = audio_queue.get()
