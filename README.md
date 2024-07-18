@@ -12,20 +12,6 @@
 - Python 3.7以上
 - pip（Pythonパッケージマネージャー）
 
-## セットアップ
-
-1. リポジトリをクローンします：
-``git clone https://github.com/yourusername/desk-hit-detection.git``
-``cd desk-hit-detection``
-
-2. 仮想環境を作成し、有効化します（オプション但し推奨）：
-``python -m venv venv``
-``source venv/bin/activate  # Linuxの場合``
-``venv\Scripts\activate  # Windowsの場合``
-
-3. 必要なパッケージをインストールします：
-``pip install -r requirements.txt``
-
 ## 使用方法
 
 1. 学習用のデータを `data/environment` と `data/desk_punch` ディレクトリに配置します。
