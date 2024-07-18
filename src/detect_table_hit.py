@@ -20,11 +20,11 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # パラメータ設定
 CHUNK = 1024
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
-RATE = 44100
+FORMAT = pyaudio.paInt16 # 16ビットの整数形式
+CHANNELS = 1 # 音声チャンネル数
+RATE = 44100 # サンプリング周波数
 DURATION = 3  # 3秒のサンプルを使用
-CONFIDENCE_THRESHOLD = 0.3  # 検出の信頼度閾値
+CONFIDENCE_THRESHOLD = 0.4  # 検出の信頼度閾値
 DISPLAY_TIME = 3  # 画像表示時間（秒）
 WARMUP_TIME = 5  # ウォームアップ時間（秒）を追加
 
@@ -74,7 +74,7 @@ def extract_features(audio_data, sr):
 
 def detect_table_hit(audio_buffer):
     try:
-        audio_data = audio_buffer.astype(np.float32) / 32768.0  # Normalize to [-1, 1]
+        audio_data = audio_buffer.astype(np.float32) / 32768.0
         logging.debug(f"Normalized audio data max: {np.max(np.abs(audio_data)):.6f}")
 
         # 特徴量抽出
@@ -142,7 +142,7 @@ try:
     while True:
         current_time = time.time()
         
-        # ウォームアップ期間中はデータを収集するだけで検出は行わない
+        # ウォームアップ期間中はデータを収集するだけで検出は行わない（なぜか検出するバグが発生したため）
         if current_time - start_time < WARMUP_TIME:
             while not audio_queue.empty():
                 data = audio_queue.get()
@@ -162,12 +162,12 @@ try:
         if detect_table_hit(audio_buffer):
             logging.info(f"台パンを検出しました: {time.time():.2f}")
             
-            # 画像を表示
+
             display_image()
             
             logging.info("検出を再開します。")
         
-        time.sleep(0.1)  # CPUの使用率を下げるための小さな遅延
+        time.sleep(0.1)  # CPUの使用率を下げるための遅延
 
 except KeyboardInterrupt:
     logging.info("ユーザーによってプログラムが停止されました。")
