@@ -1,5 +1,7 @@
 # 台パン検知システム
 
+![DeskPunch](https://github.com/user-attachments/assets/4d67dae4-bac7-4350-a10e-281c87258762)
+
 ## 概要
 このプロジェクトは、機械学習を用いて音声から「台パン」（テーブルを叩く音）を検出するシステムです。リアルタイムの音声入力を分析し、台パンが検出されると指定された画像を表示します。
 
@@ -11,20 +13,6 @@
 ## 必要条件
 - Python 3.7以上
 - pip（Pythonパッケージマネージャー）
-
-## セットアップ
-
-1. リポジトリをクローンします：
-``git clone https://github.com/yourusername/desk-hit-detection.git``
-``cd desk-hit-detection``
-
-2. 仮想環境を作成し、有効化します（オプション但し推奨）：
-``python -m venv venv``
-``source venv/bin/activate  # Linuxの場合``
-``venv\Scripts\activate  # Windowsの場合``
-
-3. 必要なパッケージをインストールします：
-``pip install -r requirements.txt``
 
 ## 使用方法
 
