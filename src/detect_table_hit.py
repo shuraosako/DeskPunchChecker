@@ -1,7 +1,7 @@
 import pyaudio
 import numpy as np
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageTk
 import time
 import librosa
 from sklearn.preprocessing import StandardScaler
@@ -11,6 +11,7 @@ import logging
 import threading
 import queue
 import random
+import tkinter as tk
 
 # ロギングの設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -24,14 +25,14 @@ FORMAT = pyaudio.paInt16 # 16ビットの整数形式
 CHANNELS = 1 # 音声チャンネル数
 RATE = 44100 # サンプリング周波数
 DURATION = 3  # 3秒のサンプルを使用
-CONFIDENCE_THRESHOLD = 0.4  # 検出の信頼度閾値
+CONFIDENCE_THRESHOLD = 0.3  # 検出の信頼度閾値
 DISPLAY_TIME = 3  # 画像表示時間（秒）
 WARMUP_TIME = 5  # ウォームアップ時間（秒）を追加
 
 # 画像のパスを設定
 IMAGE_DIR = os.path.join(PROJECT_ROOT, 'images')
-REGULAR_IMAGES = ['image 1.png', 'image 2.png', 'image 3.png', 'image 4.png']
-RARE_IMAGES = ['image 5.png', 'image 6.png']
+REGULAR_IMAGES = ['image 1.png', 'image 2.png', 'image 3.png']
+RARE_IMAGES = ['image 4.png', 'image 5.png']
 
 # モデルとスケーラーの読み込み
 MODEL_PATH = os.path.join(PROJECT_ROOT, 'models', 'svm_model.joblib')
@@ -46,7 +47,7 @@ except Exception as e:
     raise
 
 def select_image():
-    if random.random() < 0.05:  # 5%の確率で希少な画像を選択
+    if random.random() < 0.3:  # 5%の確率で希少な画像を選択
         return os.path.join(IMAGE_DIR, random.choice(RARE_IMAGES))
     else:
         return os.path.join(IMAGE_DIR, random.choice(REGULAR_IMAGES))
@@ -97,14 +98,27 @@ def detect_table_hit(audio_buffer):
         logging.error(f"台パン検出中にエラーが発生しました: {e}")
         return False
 
-def display_image():
+def display_image_topmost():
     image_path = select_image()
+    root = tk.Tk()
+    root.attributes('-topmost', True)  # ウィンドウを最前面に設定
+    root.overrideredirect(True)  # ウィンドウの枠を削除
+
     img = Image.open(image_path)
-    plt.imshow(img)
-    plt.axis('off')
-    plt.show(block=False)
-    plt.pause(DISPLAY_TIME)
-    plt.close()
+    photo = ImageTk.PhotoImage(img)
+    
+    label = tk.Label(root, image=photo)
+    label.pack()
+
+    def close_window(event):
+        root.destroy()
+
+    root.bind('<Button-1>', close_window)  # クリックでウィンドウを閉じる
+
+    root.after(int(DISPLAY_TIME * 1000), root.destroy)  # DISPLAY_TIME秒後にウィンドウを閉じる
+
+    root.mainloop()
+    
     logging.info(f"表示した画像: {os.path.basename(image_path)}")
 
 def audio_callback(in_data, frame_count, time_info, status):
@@ -142,7 +156,7 @@ try:
     while True:
         current_time = time.time()
         
-        # ウォームアップ期間中はデータを収集するだけで検出は行わない（なぜか検出するバグが発生したため）
+        # ウォームアップ期間中はデータを収集するだけで検出は行わない
         if current_time - start_time < WARMUP_TIME:
             while not audio_queue.empty():
                 data = audio_queue.get()
@@ -162,8 +176,8 @@ try:
         if detect_table_hit(audio_buffer):
             logging.info(f"台パンを検出しました: {time.time():.2f}")
             
-
-            display_image()
+            # 別スレッドで画像表示を実行
+            threading.Thread(target=display_image_topmost).start()
             
             logging.info("検出を再開します。")
         
